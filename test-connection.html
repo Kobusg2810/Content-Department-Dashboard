@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 2rem;
+        }
+
+        .log {
+            white-space: pre-wrap;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #1e293b;
+            border-radius: 8px;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #fbbf24;
+        }
+
+        .item {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Data Connection Diagnostic</h1>
+    <div id="status">Testing connection...</div>
+    <div id="logs"></div>
+
+    <script>
+        const SHEETS = [
+            { name: 'QCTO (Main)', url: 'https://docs.google.com/spreadsheets/d/14pEQHY3stCEzrDry8bnIosh1SLNAarYHZFuH1-XlNX4/export?format=csv' },
+            { name: 'Moodle Tickets', url: 'https://docs.google.com/spreadsheets/d/1c0qwzK2ajMp5LsnGkZQmh-APUKfjewJ15IQ7kw9LdK0/export?format=csv' },
+            { name: 'Content Dev', url: 'https://docs.google.com/spreadsheets/d/1RDlLGJtzybQfqjXiIYtqAVE3v3acA2qlkmbPW8jecK0/export?format=csv' },
+            { name: 'Course Loading', url: 'https://docs.google.com/spreadsheets/d/1R2ndYVWJMTBMVsaiOvVwKxG_2elkrgofX3ciXoR880o/export?format=csv' }
+        ];
+
+        const logsDiv = document.getElementById('logs');
+        const statusDiv = document.getElementById('status');
+
+        function log(msg, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            return entry;
+        }
+
+        async function testSheet(sheet) {
+            const container = document.createElement('div');
+            container.className = 'item';
+            container.innerHTML = `<h3>Testing: ${sheet.name}</h3>`;
+            logsDiv.appendChild(container);
+
+            const appendLog = (msg, type) => {
+                const l = log(msg, type);
+                container.appendChild(l);
+            };
+
+            appendLog(`URL: ${sheet.url}`, 'info');
+
+            try {
+                const timestamp = new Date().getTime();
+                const url = `${sheet.url}&t=${timestamp}`;
+
+                const response = await fetch(url);
+                appendLog(`Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+
+                // Check Content Type
+                const type = response.headers.get('content-type');
+                appendLog(`Content-Type: ${type}`, 'info');
+
+                const text = await response.text();
+                appendLog(`Response Length: ${text.length} chars`, 'info');
+
+                if (text.trim().startsWith('<') || text.includes('<!DOCTYPE html>')) {
+                    appendLog('ERROR: Received HTML (Login Page). Sheet likely not published to web.', 'error');
+                    appendLog('Preview: ' + text.substring(0, 100).replace(/</g, '&lt;'), 'error');
+                } else if (text.length < 50) {
+                    appendLog('WARNING: Response very short. Empty sheet?', 'warning');
+                    appendLog('Content: ' + text, 'warning');
+                } else {
+                    appendLog('SUCCESS: CSV content received.', 'success');
+                    const lines = text.split('\n');
+                    appendLog(`Rows: ${lines.length}`, 'success');
+                    appendLog(`Header: ${lines[0].substring(0, 100)}...`, 'info');
+                }
+            } catch (error) {
+                appendLog(`FETCH FAILED: ${error.message}`, 'error');
+                if (error.message.includes('Failed to fetch')) {
+                    appendLog('CORS Error. Ensure "Publish to Web" is active, not just "Share".', 'error');
+                }
+            }
+        }
+
+        async function runTests() {
+            for (const sheet of SHEETS) {
+                await testSheet(sheet);
+            }
+            statusDiv.textContent = 'Diagnostic Complete.';
+        }
+
+        runTests();
+    </script>
+</body>
+
+</html>

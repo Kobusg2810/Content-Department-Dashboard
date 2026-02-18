@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpecCon Department Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">SC</div>
+                <div class="logo-text">
+                    <h1>SpecCon</h1>
+                    <p>Department Dashboard</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="refresh-btn" id="refreshBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                    </svg>
+                    Refresh
+                </button>
+                <div class="user-info">
+                    <div class="user-avatar">U</div>
+                    <span>User</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-navigation">
+        <div class="container">
+            <button class="tab-btn active" data-tab="qcto">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                </svg>
+                QCTO Qualifications
+            </button>
+            <button class="tab-btn" data-tab="moodle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                Moodle Support
+            </button>
+            <button class="tab-btn" data-tab="course">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Content Dev
+            </button>
+            <button class="tab-btn" data-tab="loading">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Native
+            </button>
+            <button class="tab-btn" data-tab="client-projects">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                    </path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                Client Projects
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- QCTO Tab Content -->
+            <div id="qcto-tab" class="tab-content active">
+                <!-- Stats Overview -->
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Stats will be inserted here by JavaScript -->
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3>Overall Progress</h3>
+                            <p>Completion vs Outstanding</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="completionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3>Stage Completion Rates</h3>
+                            <p>Progress by process stage</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="stageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="table-card">
+                    <div class="card-header">
+                        <h3>Qualification Details</h3>
+                        <div class="table-actions">
+                            <input type="text" class="search-input" id="searchInput"
+                                placeholder="Search qualifications...">
+                            <button class="export-btn" id="exportBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper" id="tableWrapper">
+                        <!-- Table will be inserted here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moodle Tab Content -->
+            <div id="moodle-tab" class="tab-content">
+                <!-- Stats Overview -->
+                <div class="stats-grid" id="moodleStatsGrid">
+                    <!-- Moodle stats will be inserted here by JavaScript -->
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3>Ticket Status Distribution</h3>
+                            <p>Resolved vs In Progress vs Open</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="moodleStatusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3>Error Type Distribution</h3>
+                            <p>Tickets by error category</p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="moodlePriorityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="table-card">
+                    <div class="card-header">
+                        <h3>Support Ticket Details</h3>
+                        <div class="table-actions">
+                            <input type="text" class="search-input" id="moodleSearchInput"
+                                placeholder="Search tickets...">
+                            <button class="export-btn" id="moodleExportBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper" id="moodleTableWrapper">
+                        <!-- Moodle table will be inserted here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Dev Tab Content -->
+            <div id="course-tab" class="tab-content">
+                <div id="dashboard-content">
+                    <!-- Dynamic Content Loaded via JS -->
+                </div>
+            </div>
+
+            <!-- Course Loading Tab Content -->
+            <div id="loading-tab" class="tab-content">
+                <div id="loading-dashboard-content">
+                    <!-- Dynamic Content Loaded via JS -->
+                </div>
+            </div>
+
+            <!-- Client Projects Tab Content -->
+            <div id="client-projects-tab" class="tab-content">
+                <div id="client-projects-content">
+                    <!-- Dynamic Content Loaded via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 SpecCon. All rights reserved.</p>
+            <p class="last-updated">Last updated: <span id="lastUpdated">--</span></p>
+        </div>
+    </footer>
+
+    <script type="module" src="app.js?v=20260217a"></script>
+</body>
+
+</html>
