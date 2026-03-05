@@ -2,6 +2,7 @@ import { fetchCourseData } from './course-data.js';
 import { createCourseCategoryChart, createClientBreakdownChart } from './course-charts.js';
 
 let currentCourseData = [];
+let currentCourseFilter = null;
 
 /**
  * Render the Course Development Dashboard
@@ -103,8 +104,10 @@ function renderCourseStats(stats) {
     // Calculate completion rate
     const rate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
+    const cardStyle = 'cursor: pointer; transition: all 0.2s; pointer-events: auto;';
+
     container.innerHTML = `
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="ready for review">
             <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -119,7 +122,7 @@ function renderCourseStats(stats) {
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="in progress">
             <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #fbbf24;">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -134,7 +137,7 @@ function renderCourseStats(stats) {
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="completed">
             <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #34d399;">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -149,7 +152,7 @@ function renderCourseStats(stats) {
             </div>
         </div>
         
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="attention">
             <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #f87171;">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -164,6 +167,65 @@ function renderCourseStats(stats) {
             </div>
         </div>
     `;
+
+    // Event Delegation for click-to-filter
+    container.addEventListener('click', (e) => {
+        const card = e.target.closest('.stat-card[data-status]');
+        if (card) {
+            const status = card.dataset.status;
+            filterCourseTableByStatus(status);
+        }
+    });
+}
+
+/**
+ * Filter the Content Dev table by status
+ * @param {string} status - Status to filter by
+ */
+function filterCourseTableByStatus(status) {
+    currentCourseFilter = currentCourseFilter === status ? null : status; // Toggle
+
+    // Update visual selection
+    updateCourseCardSelection();
+
+    if (!currentCourseFilter) {
+        // Reset to full list
+        renderCourseTable(currentCourseData);
+        return;
+    }
+
+    const filtered = currentCourseData.filter(c => {
+        const s = c.status.toLowerCase();
+        if (status === 'completed') return s === 'completed';
+        if (status === 'in progress') return s === 'in progress' || s === 'not started';
+        if (status === 'ready for review') return s === 'ready for review';
+        if (status === 'attention') return s === 'overdue' || s.includes('pending');
+        return true;
+    });
+
+    renderCourseTable(filtered);
+}
+
+/**
+ * Update visual selection of Content Dev stat cards
+ */
+function updateCourseCardSelection() {
+    const container = document.getElementById('course-stats-grid');
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.stat-card');
+    cards.forEach(card => {
+        const statusAttr = card.dataset.status;
+        const isActive = statusAttr && statusAttr === currentCourseFilter;
+
+        if (isActive) {
+            card.style.border = '2px solid var(--accent-500)';
+            card.style.background = 'var(--bg-card-active)';
+        } else {
+            card.style.border = '1px solid var(--border-color)';
+            card.style.background = 'var(--bg-card)';
+        }
+    });
 }
 
 function renderCourseTable(courses) {

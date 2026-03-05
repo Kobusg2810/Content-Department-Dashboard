@@ -1,9 +1,18 @@
+// Filtering state for Moodle dashboard
+let currentMoodleFilter = null;
+let currentMoodleTickets = [];
+
 /**
  * Render Moodle statistics cards
  * @param {Object} stats - Statistics object from calculateMoodleStats
  * @param {HTMLElement} container - Container element for stats
+ * @param {Array} tickets - Full tickets array for filtering
  */
-export function renderMoodleStats(stats, container) {
+export function renderMoodleStats(stats, container, tickets) {
+    // Store tickets for filtering
+    if (tickets) currentMoodleTickets = tickets;
+
+    const cardStyle = 'cursor: pointer; transition: all 0.2s; pointer-events: auto;';
     container.innerHTML = `
         <div class="stat-card">
             <div class="stat-header">
@@ -20,7 +29,7 @@ export function renderMoodleStats(stats, container) {
             <div class="stat-label">Total Tickets</div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="resolved">
             <div class="stat-header">
                 <div class="stat-icon success">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -42,7 +51,7 @@ export function renderMoodleStats(stats, container) {
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="active">
             <div class="stat-header">
                 <div class="stat-icon warning">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -74,6 +83,68 @@ export function renderMoodleStats(stats, container) {
             <div class="stat-label">Avg. Resolution Time (days)</div>
         </div>
     `;
+
+    // Event Delegation for click-to-filter
+    container.addEventListener('click', (e) => {
+        const card = e.target.closest('.stat-card[data-status]');
+        if (card) {
+            const status = card.dataset.status;
+            filterMoodleTableByStatus(status);
+        }
+    });
+}
+
+/**
+ * Filter the Moodle ticket table by status
+ * @param {string} status - Status to filter by ('resolved', 'active')
+ */
+function filterMoodleTableByStatus(status) {
+    currentMoodleFilter = currentMoodleFilter === status ? null : status; // Toggle
+
+    // Update visual selection
+    updateMoodleCardSelection();
+
+    if (!currentMoodleFilter) {
+        // Reset to full list
+        renderMoodleTable(currentMoodleTickets, document.getElementById('moodleTableWrapper'));
+        return;
+    }
+
+    const filtered = currentMoodleTickets.filter(t => {
+        const s = t.status.toLowerCase();
+        if (status === 'resolved') {
+            return s === 'completed' || s === 'resolved' || s.includes('complete') || s.includes('closed');
+        }
+        if (status === 'active') {
+            // Active = everything that is NOT resolved
+            return !(s === 'completed' || s === 'resolved' || s.includes('complete') || s.includes('closed'));
+        }
+        return true;
+    });
+
+    renderMoodleTable(filtered, document.getElementById('moodleTableWrapper'));
+}
+
+/**
+ * Update visual selection of Moodle stat cards
+ */
+function updateMoodleCardSelection() {
+    const container = document.getElementById('moodleStatsGrid');
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.stat-card');
+    cards.forEach(card => {
+        const statusAttr = card.dataset.status;
+        const isActive = statusAttr && statusAttr === currentMoodleFilter;
+
+        if (isActive) {
+            card.style.border = '2px solid var(--accent-500)';
+            card.style.background = 'var(--bg-card-active)';
+        } else {
+            card.style.border = '1px solid var(--border-color)';
+            card.style.background = 'var(--bg-card)';
+        }
+    });
 }
 
 /**
@@ -231,10 +302,10 @@ function formatDate(dateStr) {
 export function parseCustomDate(dateStr) {
     if (!dateStr) return new Date('Invalid');
 
-    // 1. Prioritize DD/MM/YYYY or DD-MM-YYYY format
+    // 1. Prioritize DD/MM/YYYY or DD-MM-YYYY format (optionally with HH:mm time)
     // This is crucial because new Date('02/10/2026') is ambiguous (Oct 2nd vs Feb 10th)
     // We want to force DD/MM/YYYY interpretation for the user
-    const parts = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    const parts = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (parts) {
         // parts[1] is day, parts[2] is month, parts[3] is year
         const day = parseInt(parts[1], 10);

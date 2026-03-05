@@ -4,6 +4,9 @@
 import { fetchClientProjectsData } from './client-projects-data.js';
 import { updateClientProjectsCharts } from './client-projects-charts.js';
 
+let currentProjectsData = [];
+let currentProjectsFilter = null;
+
 export async function renderClientProjectsDashboard() {
     const dashboard = document.getElementById('client-projects-content');
 
@@ -63,6 +66,7 @@ export async function renderClientProjectsDashboard() {
 
     // Fetch and Render Data
     const data = await fetchClientProjectsData();
+    currentProjectsData = data.projects;
     renderProjectStats(data.stats);
     renderProjectsTable(data.projects);
 
@@ -72,7 +76,7 @@ export async function renderClientProjectsDashboard() {
     // Setup Search
     document.getElementById('projectSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = data.projects.filter(p =>
+        const filtered = currentProjectsData.filter(p =>
             p.name.toLowerCase().includes(term) ||
             p.client.toLowerCase().includes(term) ||
             p.owner.toLowerCase().includes(term)
@@ -84,6 +88,9 @@ export async function renderClientProjectsDashboard() {
 function renderProjectStats(stats) {
     const container = document.getElementById('client-projects-stats');
     if (!stats || !container) return;
+
+    const cardStyle = 'cursor: pointer; transition: all 0.2s; pointer-events: auto;';
+    const notFinalised = (stats.totalProjects || 0) - (stats.finalised || 0);
 
     container.innerHTML = `
         <div class="stat-card">
@@ -98,7 +105,7 @@ function renderProjectStats(stats) {
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="finalised">
             <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -109,6 +116,21 @@ function renderProjectStats(stats) {
                 <p class="stat-value">${stats.finalised || 0}</p>
                 <div class="stat-trend">
                    <span>${Math.round((stats.finalised / stats.totalProjects) * 100) || 0}% completion</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card" style="${cardStyle}" data-status="in-progress">
+            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3>In Progress</h3>
+                <p class="stat-value">${notFinalised}</p>
+                <div class="stat-trend">
+                    <span style="color: #fbbf24">Not yet finalised</span>
                 </div>
             </div>
         </div>
@@ -125,6 +147,62 @@ function renderProjectStats(stats) {
             </div>
         </div>
     `;
+
+    // Event Delegation for click-to-filter
+    container.addEventListener('click', (e) => {
+        const card = e.target.closest('.stat-card[data-status]');
+        if (card) {
+            const status = card.dataset.status;
+            filterProjectsTableByStatus(status);
+        }
+    });
+}
+
+/**
+ * Filter the Client Projects table by status
+ * @param {string} status - Status to filter by ('finalised', 'in-progress')
+ */
+function filterProjectsTableByStatus(status) {
+    currentProjectsFilter = currentProjectsFilter === status ? null : status; // Toggle
+
+    // Update visual selection
+    updateProjectsCardSelection();
+
+    if (!currentProjectsFilter) {
+        // Reset to full list
+        renderProjectsTable(currentProjectsData);
+        return;
+    }
+
+    const filtered = currentProjectsData.filter(p => {
+        if (status === 'finalised') return p.finalised === true;
+        if (status === 'in-progress') return p.finalised !== true;
+        return true;
+    });
+
+    renderProjectsTable(filtered);
+}
+
+/**
+ * Update visual selection of Client Projects stat cards
+ */
+function updateProjectsCardSelection() {
+    const container = document.getElementById('client-projects-stats');
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.stat-card');
+    cards.forEach(card => {
+        const statusAttr = card.dataset.status;
+        const isActive = statusAttr && statusAttr === currentProjectsFilter;
+
+        if (isActive) {
+            card.style.border = '2px solid var(--accent-500)';
+            card.style.background = 'var(--bg-card-active)';
+        } else {
+            card.style.border = '1px solid var(--border-color)';
+            card.style.background = 'var(--bg-card)';
+        }
+    });
 }
 
 function renderProjectsTable(projects) {

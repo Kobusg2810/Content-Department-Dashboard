@@ -7,6 +7,7 @@ import { createMoodleStatusChart, createMoodlePriorityChart } from './moodle-cha
 import { renderCourseDashboard } from './course-components.js';
 import { renderLoadingDashboard } from './loading-components.js';
 import { renderClientProjectsDashboard } from './client-projects-components.js';
+import { showTicketModal } from './moodle-ticket-form.js';
 
 // Global state
 let qualificationsData = [];
@@ -25,11 +26,14 @@ const QCTO_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14pEQHY3stCEzrDry
 const MOODLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1c0qwzK2ajMp5LsnGkZQmh-APUKfjewJ15IQ7kw9LdK0/edit?gid=0#gid=0';
 const MOODLE_SHEET_GID = null; // No GID - export default/first sheet only
 
+// Google Apps Script URL for ticket submission (paste your deployed URL here)
+window.MOODLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8128UBxYQbtDGlW1oHBmJVz35sC1aGiHbGFs8psmETFhewnzKlKpuEtxtyPpzn4jQbQ/exec';
+
 /**
  * Initialize the application
  */
 async function init() {
-    console.log('🚀 Initializing SpecCon Department Dashboard...');
+    console.log('🚀 Initializing Content Department Dashboard...');
 
     // Set up event listeners
     setupEventListeners();
@@ -104,6 +108,28 @@ function setupEventListeners() {
     if (moodleExportBtn) {
         moodleExportBtn.addEventListener('click', () => {
             exportMoodleData();
+        });
+    }
+
+    // New Ticket button
+    const newTicketBtn = document.getElementById('newTicketBtn');
+    if (newTicketBtn) {
+        newTicketBtn.addEventListener('click', () => {
+            showTicketModal(async () => {
+                // Refresh Moodle data after successful submission
+                moodleTicketsData = await fetchMoodleTickets(MOODLE_SHEET_URL, MOODLE_SHEET_GID);
+                moodleTicketsData.sort((a, b) => {
+                    const dateA = parseCustomDate(a.date);
+                    const dateB = parseCustomDate(b.date);
+                    if (dateA.getTime() !== dateB.getTime() && !isNaN(dateA) && !isNaN(dateB)) {
+                        return dateB - dateA;
+                    }
+                    const numA = parseInt(a.ticketNo.replace(/\D/g, '')) || 0;
+                    const numB = parseInt(b.ticketNo.replace(/\D/g, '')) || 0;
+                    return numB - numA;
+                });
+                renderMoodleDashboard();
+            });
         });
     }
 }
@@ -228,7 +254,7 @@ function renderQCTODashboard() {
     const stats = calculateStats(filteredData);
 
     // Render components
-    renderStats(stats, document.getElementById('statsGrid'));
+    renderStats(stats, document.getElementById('statsGrid'), filteredData);
     renderTable(filteredData, document.getElementById('tableWrapper'));
 
     // Render charts
@@ -246,7 +272,7 @@ function renderMoodleDashboard() {
     const stats = calculateMoodleStats(filteredData);
 
     // Render components
-    renderMoodleStats(stats, document.getElementById('moodleStatsGrid'));
+    renderMoodleStats(stats, document.getElementById('moodleStatsGrid'), filteredData);
     renderMoodleTable(filteredData, document.getElementById('moodleTableWrapper'));
 
     // Render charts

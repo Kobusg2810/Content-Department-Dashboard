@@ -4,12 +4,21 @@ import { getQualificationGID } from './qualification-gids.js';
 // Cache for calculated completion percentages to persist across auto-refreshes
 const completionCache = {};
 
+// Filtering state for QCTO dashboard
+let currentQCTOFilter = null;
+let currentQCTOData = [];
+
 /**
  * Render statistics cards
  * @param {Object} stats - Statistics object from calculateStats
  * @param {HTMLElement} container - Container element for stats
  */
-export function renderStats(stats, container) {
+export function renderStats(stats, container, qualifications) {
+    // Store qualifications for filtering
+    if (qualifications) currentQCTOData = qualifications;
+
+    const cardStyle = 'cursor: pointer; transition: all 0.2s; pointer-events: auto;';
+
     container.innerHTML = `
         <div class="stat-card">
             <div class="stat-header">
@@ -24,7 +33,7 @@ export function renderStats(stats, container) {
             <div class="stat-label">Total Qualifications</div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="completed">
             <div class="stat-header">
                 <div class="stat-icon success">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -46,7 +55,7 @@ export function renderStats(stats, container) {
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="inprogress">
             <div class="stat-header">
                 <div class="stat-icon warning">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -59,7 +68,7 @@ export function renderStats(stats, container) {
             <div class="stat-label">In Progress</div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" style="${cardStyle}" data-status="notstarted">
             <div class="stat-header">
                 <div class="stat-icon accent">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -73,6 +82,67 @@ export function renderStats(stats, container) {
             <div class="stat-label">Not Started</div>
         </div>
     `;
+
+    // Event Delegation for click-to-filter
+    container.addEventListener('click', (e) => {
+        const card = e.target.closest('.stat-card[data-status]');
+        if (card) {
+            const status = card.dataset.status;
+            filterQCTOTableByStatus(status);
+        }
+    });
+}
+
+/**
+ * Filter the QCTO table by completion status
+ * @param {string} status - Status to filter by ('completed', 'inprogress', 'notstarted')
+ */
+function filterQCTOTableByStatus(status) {
+    currentQCTOFilter = currentQCTOFilter === status ? null : status; // Toggle
+
+    // Update visual selection
+    updateQCTOCardSelection();
+
+    if (!currentQCTOFilter) {
+        // Reset to full list
+        renderTable(currentQCTOData, document.getElementById('tableWrapper'));
+        return;
+    }
+
+    const filtered = currentQCTOData.filter(q => {
+        const completion = completionCache[q.qualificationName] !== undefined
+            ? completionCache[q.qualificationName]
+            : calculateCompletion(q);
+
+        if (status === 'completed') return completion === 100;
+        if (status === 'inprogress') return completion > 0 && completion < 100;
+        if (status === 'notstarted') return completion === 0;
+        return true;
+    });
+
+    renderTable(filtered, document.getElementById('tableWrapper'));
+}
+
+/**
+ * Update visual selection of QCTO stat cards
+ */
+function updateQCTOCardSelection() {
+    const container = document.getElementById('statsGrid');
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.stat-card');
+    cards.forEach(card => {
+        const statusAttr = card.dataset.status;
+        const isActive = statusAttr && statusAttr === currentQCTOFilter;
+
+        if (isActive) {
+            card.style.border = '2px solid var(--accent-500)';
+            card.style.background = 'var(--bg-card-active)';
+        } else {
+            card.style.border = '1px solid var(--border-color)';
+            card.style.background = 'var(--bg-card)';
+        }
+    });
 }
 
 /**
