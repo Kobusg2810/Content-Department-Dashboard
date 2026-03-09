@@ -1,6 +1,6 @@
 
 // Google Sheet URL for Moodle Loading content
-const LOADING_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R2ndYVWJMTBMVsaiOvVwKxG_2elkrgofX3ciXoR880o/export?format=csv';
+const LOADING_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1R2ndYVWJMTBMVsaiOvVwKxG_2elkrgofX3ciXoR880o/export?format=csv&gid=702904795';
 
 // Sample data for development/fallback
 const sampleLoadingData = [
@@ -110,49 +110,47 @@ function parseLoadingCSV(csvText) {
 
     console.log(`✅ Log: Parsed ${rows.length} rows from CSV.`);
 
-    // Chunk 0 Analysis:
-    // 0: Course Name
-    // 1: New Course Name
-    // 2: Person (Dev3)
-    // 3: Person (New Tap)
-    // 4: Media & Resource...
-    // 5: Course Structure...
-    // 6: Loaded by
-    // 7: Lesson Questions...
-    // 8: Examination loaded
-    // 9: Total Units
-    // 10: Total Videos
-    // 11: Review & Finish
-    // 12: Course complete
-    // 13: Start at
-    // 14: End at
-    // 15: Duration
-    // 16: Checked by
+    // Chunk 0 Analysis (New Format):
+    // 0: Courses
+    // 1: Total Units
+    // 2: Total Videos
+    // 3: Done
+    // 4: Person to load Course (Dev3)
 
     const courses = rows.slice(1).map(row => {
         return {
             courseName: row[0] || '',
-            newCourseName: row[1] || '',
-            personDev3: row[2] || '',
-            personTap: row[3] || '',
-            mediaLoaded: row[4] || '',      // Done/Not Done
-            structureLoaded: row[5] || '',  // Done/Not Done
-            loadedBy: row[6] || '',
-            lessonQuestions: row[7] || '', // TRUE/FALSE
-            examLoaded: row[8] || '',      // TRUE/FALSE
-            units: parseInt(row[9]) || 0,
-            videos: parseInt(row[10]) || 0,
-            reviewFinish: row[11] || '',   // Done/Not Done
-            courseComplete: row[12] || 'FALSE', // TRUE/FALSE
-            startTime: row[13] || '',
-            endTime: row[14] || '',
-            duration: row[15] || '',
-            checkedBy: row[16] || ''
+            newCourseName: '',
+            personDev3: row[4] || '',
+            personTap: '',
+            mediaLoaded: '',      // Done/Not Done
+            structureLoaded: '',  // Done/Not Done
+            loadedBy: row[4] || '',
+            lessonQuestions: '', // TRUE/FALSE
+            examLoaded: '',      // TRUE/FALSE
+            units: parseInt(row[1]) || 0,
+            videos: parseInt(row[2]) || 0,
+            reviewFinish: '',   // Done/Not Done
+            courseComplete: row[3] || 'FALSE', // TRUE/FALSE
+            startTime: '',
+            endTime: '',
+            duration: '',
+            checkedBy: ''
         };
     }).filter(course => course.courseName); // Filter out empty rows
 
-    console.log(`✅ Log: First Parsed Course:`, courses[0]);
-    return processLoadingData(courses);
+    // Deduplicate by course name (Google Sheets export sometimes duplicates the content)
+    const uniqueCourses = [];
+    const seenNames = new Set();
+    for (const course of courses) {
+        if (!seenNames.has(course.courseName)) {
+            uniqueCourses.push(course);
+            seenNames.add(course.courseName);
+        }
+    }
+
+    console.log(`✅ Log: First Parsed Course:`, uniqueCourses[0]);
+    return processLoadingData(uniqueCourses);
 }
 
 /**
