@@ -208,15 +208,16 @@ export function renderMoodleTable(tickets, container) {
 function getErrorTypeBadge(type) {
     if (!type) return '<span class="error-badge" style="background-color: rgba(148, 163, 184, 0.1); color: #cbd5e1;">Uncategorized</span>';
 
-    // Define colors matching the chart
+    // Define colors mapping exactly to the real error types
     const colors = {
-        'Moodle Error': { bg: 'rgba(239, 68, 68, 0.15)', text: '#fca5a5' },      // Red
-        'User Access': { bg: 'rgba(245, 158, 11, 0.15)', text: '#fcd34d' },       // Orange
-        'Course Content': { bg: 'rgba(59, 130, 246, 0.15)', text: '#93c5fd' },    // Blue
-        'Enrolment': { bg: 'rgba(16, 185, 129, 0.15)', text: '#6ee7b7' },         // Green
-        'Assessment': { bg: 'rgba(139, 92, 246, 0.15)', text: '#c4b5fd' },        // Purple
-        'Report': { bg: 'rgba(236, 72, 153, 0.15)', text: '#f9a8d4' },            // Pink
-        'Other': { bg: 'rgba(148, 163, 184, 0.15)', text: '#cbd5e1' }             // Grey
+        'New TAP': { bg: 'rgba(16, 185, 129, 0.15)', text: '#6ee7b7' },          // Green
+        'Old TAP': { bg: 'rgba(245, 158, 11, 0.15)', text: '#fcd34d' },          // Orange
+        'Moodle': { bg: 'rgba(239, 68, 68, 0.15)', text: '#fca5a5' },            // Red
+        'LMS': { bg: 'rgba(59, 130, 246, 0.15)', text: '#93c5fd' },              // Blue
+        'Certificates': { bg: 'rgba(236, 72, 153, 0.15)', text: '#f9a8d4' },     // Pink
+        'Escalate': { bg: 'rgba(139, 92, 246, 0.15)', text: '#c4b5fd' },         // Purple
+        'Loading Course': { bg: 'rgba(6, 182, 212, 0.15)', text: '#67e8f9' },    // Cyan
+        'Loading Assessment': { bg: 'rgba(168, 85, 247, 0.15)', text: '#d8b4fe' } // Violet
     };
 
     // Default hash-based color for unknown types to ensure consistency

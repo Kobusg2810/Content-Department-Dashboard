@@ -3,7 +3,7 @@
 
 // Configuration — team members and error types
 const TEAM_MEMBERS = ['Jesaia', 'Lefentswe', 'Caroline', 'Gosiame', 'Anashya'];
-const ERROR_TYPES = ['New TAP', 'LMS', 'Moodle', 'Certificates', 'Old TAP', 'Escalate', 'Loading Course'];
+const ERROR_TYPES = ['New TAP', 'LMS', 'Moodle', 'Certificates', 'Old TAP', 'Escalate', 'Loading Course', 'Loading Assessment'];
 const STATUSES = ['Open', 'In Progress', 'Completed', 'Escalated'];
 
 /**
