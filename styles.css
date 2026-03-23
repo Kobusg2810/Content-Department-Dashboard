@@ -773,7 +773,8 @@ body {
 }
 
 .description-text {
-    max-width: 500px;
+    min-width: 400px;
+    max-width: 600px;
     display: inline-block;
     white-space: nowrap;
     overflow: hidden;
