@@ -16,7 +16,6 @@ export async function renderCourseDashboard() {
             <div class="stat-card skeleton"></div>
             <div class="stat-card skeleton"></div>
             <div class="stat-card skeleton"></div>
-            <div class="stat-card skeleton"></div>
         </div>
 
         <div class="charts-container">
@@ -107,15 +106,15 @@ function renderCourseStats(stats) {
     const cardStyle = 'cursor: pointer; transition: all 0.2s; pointer-events: auto;';
 
     container.innerHTML = `
-        <div class="stat-card" style="${cardStyle}" data-status="ready for review">
+        <div class="stat-card" style="${cardStyle}" data-status="reviewed">
             <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>
             <div class="stat-content">
-                <h3>Ready for Review</h3>
-                <p class="stat-value">${stats.readyForReview}</p>
+                <h3>Reviewed</h3>
+                <p class="stat-value">${stats.reviewed}</p>
                 <div class="stat-trend" style="color: #c4b5fd">
                     <span>${stats.total} Total Items</span>
                 </div>
@@ -147,22 +146,7 @@ function renderCourseStats(stats) {
                 <h3>Completed</h3>
                 <p class="stat-value">${stats.completed}</p>
                 <div class="stat-trend">
-                    <span style="color: #34d399">Ready for Review</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="stat-card" style="${cardStyle}" data-status="attention">
-            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #f87171;">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <h3>Attention Needed</h3>
-                <p class="stat-value">${stats.overdue + stats.pendingApproval}</p>
-                <div class="stat-trend">
-                    <span style="color: #f87171">${stats.overdue} Overdue</span> • <span>${stats.pendingApproval} Pending</span>
+                    <span style="color: #34d399">Fully Done</span>
                 </div>
             </div>
         </div>
@@ -198,8 +182,7 @@ function filterCourseTableByStatus(status) {
         const s = c.status.toLowerCase();
         if (status === 'completed') return s === 'completed';
         if (status === 'in progress') return s === 'in progress' || s === 'not started';
-        if (status === 'ready for review') return s === 'ready for review';
-        if (status === 'attention') return s === 'overdue' || s.includes('pending');
+        if (status === 'reviewed') return s === 'reviewed';
         return true;
     });
 
@@ -263,8 +246,7 @@ function getStatusBadge(status) {
 
     if (s === 'completed') className = 'status-resolved';
     else if (s === 'in progress') className = 'status-progress';
-    else if (s === 'ready for review') className = 'status-escalated'; // Purple
-    else if (s === 'overdue') className = 'status-open'; // Red
+    else if (s === 'reviewed') className = 'status-escalated'; // Purple
     else if (s === 'not started') className = 'status-pending';
     else if (s.includes('pending')) className = 'status-pending'; // Maybe yellow?
 

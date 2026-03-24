@@ -174,9 +174,11 @@ function processCourses(rawCourses) {
             if (isReviewed) {
                 status = 'Completed';
             } else {
-                status = 'Ready for Review';
+                status = 'Reviewed'; // Formerly "Ready for Review"
             }
         } else if (startDate) {
+            status = 'In Progress';
+        } else if (course.originalStatus && course.originalStatus.trim().toLowerCase() === 'in progress') {
             status = 'In Progress';
         } else if (course.clientApproval && course.clientApproval.toUpperCase() === 'FALSE') {
             // If explicit "Wait for Approval" data exists, we could use it
@@ -187,12 +189,7 @@ function processCourses(rawCourses) {
         // Check Overdue
         if (dueDate && !completeDate && dueDate < today) {
             isOverdue = true;
-            if (status !== 'Completed' && status !== 'Ready for Review') {
-                status = 'Overdue'; // Override status for visibility
-                // Let's keep status as 'Overdue' for visibility, 
-                // but maybe 'In Progress (Overdue)' is better?
-                // Simple 'Overdue' is clearer for stats.
-            }
+            // Removed status override so tasks stay 'In Progress' for stats count
         }
 
         return {
@@ -209,11 +206,9 @@ function processCourses(rawCourses) {
     const stats = {
         total: processedCourses.length,
         completed: processedCourses.filter(c => c.status === 'Completed').length,
-        readyForReview: processedCourses.filter(c => c.status === 'Ready for Review').length,
+        reviewed: processedCourses.filter(c => c.status === 'Reviewed').length,
         inProgress: processedCourses.filter(c => c.status === 'In Progress').length,
         notStarted: processedCourses.filter(c => c.status === 'Not Started').length,
-        overdue: processedCourses.filter(c => c.status === 'Overdue' || c.isOverdue).length,
-        pendingApproval: processedCourses.filter(c => c.clientApproval === 'FALSE' && c.status !== 'Completed').length,
 
         // Breakdowns for charts
         byCategory: {},
