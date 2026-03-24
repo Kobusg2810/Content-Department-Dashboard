@@ -350,12 +350,21 @@ export function calculateMoodleStats(tickets) {
             // Robust parsing for DD/MM/YYYY or YYYY-MM-DD
             const parseDate = (dateStr) => {
                 if (!dateStr) return null;
+                
+                // Extract just the date part if it contains a timestamp (e.g., "toISOString()" format)
+                if (dateStr.includes('T')) {
+                    dateStr = dateStr.split('T')[0];
+                } else if (dateStr.includes(' ')) {
+                    dateStr = dateStr.split(' ')[0];
+                }
+
                 // Handle DD/MM/YYYY
                 if (dateStr.includes('/')) {
                     const parts = dateStr.split('/');
                     if (parts.length === 3) {
                         // Assumption: DD/MM/YYYY
-                        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                        const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                        if (!isNaN(d.getTime())) return d;
                     }
                 }
                 const d = new Date(dateStr);
@@ -365,10 +374,16 @@ export function calculateMoodleStats(tickets) {
             const submitted = parseDate(ticket.date);
             const completed = parseDate(ticket.dateCompleted);
 
-            if (submitted && completed && completed >= submitted) {
-                const days = Math.floor((completed - submitted) / (1000 * 60 * 60 * 24));
-                validTicketCount++;
-                return sum + days;
+            if (submitted && completed) {
+                // Ignore time components, compare just the dates
+                const submittedDate = new Date(submitted.getFullYear(), submitted.getMonth(), submitted.getDate());
+                const completedDate = new Date(completed.getFullYear(), completed.getMonth(), completed.getDate());
+
+                if (completedDate >= submittedDate) {
+                    const days = Math.round((completedDate - submittedDate) / (1000 * 60 * 60 * 24));
+                    validTicketCount++;
+                    return sum + days;
+                }
             }
             return sum;
         }, 0);
