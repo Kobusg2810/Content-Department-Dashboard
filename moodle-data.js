@@ -343,9 +343,16 @@ export function calculateMoodleStats(tickets) {
     // Filter for tickets with valid dates
     const completedTickets = tickets.filter(t => t.dateCompleted && t.date);
     let avgResolutionDays = 0;
+    let avgResolutionDaysThisMonth = 0;
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
     if (completedTickets.length > 0) {
         let validTicketCount = 0;
+        let validTicketCountThisMonth = 0;
+        let totalDaysThisMonth = 0;
         const totalDays = completedTickets.reduce((sum, ticket) => {
             // Robust parsing for DD/MM/YYYY or YYYY-MM-DD
             const parseDate = (dateStr) => {
@@ -382,6 +389,12 @@ export function calculateMoodleStats(tickets) {
                 if (completedDate >= submittedDate) {
                     const days = Math.round((completedDate - submittedDate) / (1000 * 60 * 60 * 24));
                     validTicketCount++;
+                    
+                    if (completed.getMonth() === currentMonth && completed.getFullYear() === currentYear) {
+                        validTicketCountThisMonth++;
+                        totalDaysThisMonth += days;
+                    }
+                    
                     return sum + days;
                 }
             }
@@ -390,6 +403,9 @@ export function calculateMoodleStats(tickets) {
 
         if (validTicketCount > 0) {
             avgResolutionDays = Math.round((totalDays / validTicketCount) * 10) / 10;
+        }
+        if (validTicketCountThisMonth > 0) {
+            avgResolutionDaysThisMonth = Math.round((totalDaysThisMonth / validTicketCountThisMonth) * 10) / 10;
         }
     }
 
@@ -402,7 +418,8 @@ export function calculateMoodleStats(tickets) {
         active: open + inProgress,
         errorTypes,
         assignees,
-        avgResolutionDays
+        avgResolutionDays,
+        avgResolutionDaysThisMonth
     };
 }
 
