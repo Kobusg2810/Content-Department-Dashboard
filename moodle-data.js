@@ -233,13 +233,18 @@ function parseCSVToMoodleTickets(csvData) {
             }
         }
 
+        let errorType = values[5]?.trim() || '';
+        if (errorType === 'Loading') {
+            errorType = 'Loading Course';
+        }
+
         const obj = {
             date: values[0]?.trim() || '',
             ticketNo: values[1]?.trim() || '',
             ticketDetail: values[2]?.trim() || '',
             contactPerson: values[3]?.trim() || '',
             assignedTo: values[4]?.trim() || 'Unassigned',
-            errorType: values[5]?.trim() || '',
+            errorType: errorType,
             status: status,
             dateStarted: values[7]?.trim() || '',
             dateCompleted: values[8]?.trim() || ''
