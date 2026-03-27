@@ -499,11 +499,9 @@ body {
 .table-wrapper {
     margin-top: var(--spacing-lg);
     overflow-x: auto;
-    transform: scaleY(-1);
-}
-
-.table-wrapper>* {
-    transform: scaleY(-1);
+    overflow-y: auto;
+    max-height: 600px;
+    border-radius: var(--radius-md);
 }
 
 .data-table {
@@ -514,6 +512,9 @@ body {
 
 .data-table thead {
     background: rgba(99, 102, 241, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .data-table th {
@@ -526,6 +527,7 @@ body {
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
+    background: #1a2240;
 }
 
 .data-table th:hover {
