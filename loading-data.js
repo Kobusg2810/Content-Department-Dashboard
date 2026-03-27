@@ -110,24 +110,26 @@ function parseLoadingCSV(csvText) {
 
     console.log(`✅ Log: Parsed ${rows.length} rows from CSV.`);
 
-    // Chunk 0 Analysis (New Format):
+    // Spreadsheet column mapping:
     // 0: Courses
     // 1: Total Units
     // 2: Total Videos
-    // 3: Done
-    // 4: Person to load Course (Dev3)
+    // 3: Done (TRUE/FALSE)
+    // 4: Video & Audio Loaded (Roelf and Team) - TRUE/FALSE
+    // 5: Approved and Live - TRUE/FALSE
+    // 6: Person to load Course (Dev3)
 
     const courses = rows.slice(1).map(row => {
         return {
             courseName: row[0] || '',
             newCourseName: '',
-            personDev3: row[4] || '',
+            personDev3: row[6] || '',
             personTap: '',
-            mediaLoaded: '',      // Done/Not Done
-            structureLoaded: '',  // Done/Not Done
-            loadedBy: row[4] || '',
+            mediaLoaded: row[4] || '',    // Video & Audio Loaded (TRUE/FALSE)
+            structureLoaded: '',
+            loadedBy: row[6] || '',       // Person to load Course (Dev3)
             lessonQuestions: '', // TRUE/FALSE
-            examLoaded: '',      // TRUE/FALSE
+            examLoaded: row[5] || '',     // Approved and Live (TRUE/FALSE)
             units: parseInt(row[1]) || 0,
             videos: parseInt(row[2]) || 0,
             reviewFinish: '',   // Done/Not Done
