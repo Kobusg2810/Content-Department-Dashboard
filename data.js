@@ -118,28 +118,40 @@ function parseCSVToQCTO(csvData) {
             continue;
         }
 
-        const percentDone = values[2]?.trim() || '0%';
+        const percentDoneStr = values[2]?.trim() || '0%';
         const assignedTo = values[4]?.trim() || '';
         const done = parseBooleanValue(values[5]);
         const loadedOnMoodle = parseBooleanValue(values[6]);
         const createdOnLMS = parseBooleanValue(values[7]);
 
+        // Parse percentage string to number
+        const percentDoneNum = parseInt(percentDoneStr.replace(/%/g, '')) || 0;
+
+        // Extract NQF level for ID column
+        let nqfId = '';
+        const nqfMatch = qualName.match(/NQF\s*([0-9]+)/i);
+        if (nqfMatch) {
+            nqfId = 'NQF ' + nqfMatch[1];
+        }
+
         // For summary view, we use "Done" as proxy for alignment stages
-        // and the other columns for Moodle/LMS status
+        const stageStatus = done || percentDoneNum === 100;
+
         const obj = {
             qualificationName: qualName,
-            qualificationID: '', // Not in summary tab
+            qualificationID: nqfId, 
             modules: '', // Not in summary tab
-            iacAligned: done, // Using "Done" as proxy for IAC
-            aacAligned: done, // Using "Done" as proxy for AAC  
-            loadedOnMoodle: loadedOnMoodle,
-            learnerGuideChecked: done, // Using "Done" as proxy
-            courseActivitiesCreated: createdOnLMS,
-            contentReviewed: done, // Using "Done" as proxy
-            alignmentMatrixCorrected: done, // "Done" column
+            iacAligned: stageStatus, 
+            aacAligned: stageStatus, 
+            loadedOnMoodle: loadedOnMoodle || percentDoneNum === 100,
+            learnerGuideChecked: stageStatus, 
+            courseActivitiesCreated: createdOnLMS || percentDoneNum === 100,
+            contentReviewed: stageStatus, 
+            alignmentMatrixCorrected: done || percentDoneNum === 100,
             assignedTo: assignedTo,
-            percentDone: percentDone,
-            moduleDetails: [] // No module details in summary view
+            percentDone: percentDoneStr,
+            percentDoneNumeric: percentDoneNum,
+            moduleDetails: [] 
         };
 
         data.push(obj);
@@ -147,8 +159,29 @@ function parseCSVToQCTO(csvData) {
 
     console.log(`✅ Parsed ${data.length} QCTO qualifications from summary tab`);
 
+    // Deduplicate qualifications by name (keep the one with higher progress)
+    const uniqueData = [];
+    const nameMap = new Map();
+    
+    data.forEach(q => {
+        const normalizedName = q.qualificationName.toUpperCase().trim();
+        if (nameMap.has(normalizedName)) {
+            const existing = nameMap.get(normalizedName);
+            // Prefer entry with higher percentage; if equal, prefer the one marked Done
+            if (q.percentDoneNumeric > existing.percentDoneNumeric ||
+                (q.percentDoneNumeric === existing.percentDoneNumeric && q.alignmentMatrixCorrected && !existing.alignmentMatrixCorrected)) {
+                nameMap.set(normalizedName, q);
+            }
+        } else {
+            nameMap.set(normalizedName, q);
+        }
+    });
+    
+    const dedupedData = Array.from(nameMap.values());
+    console.log(`✅ Deduplicated to ${dedupedData.length} unique qualifications`);
+
     // Filter out SHE Rep Compliance as requested (case-insensitive)
-    const filtered = data.filter(q => {
+    const filtered = dedupedData.filter(q => {
         const name = q.qualificationName.toUpperCase();
         return !name.includes('SHE REP');
     });
@@ -176,7 +209,9 @@ function parseBooleanValue(value) {
  * @returns {number} Completion percentage (0-100)
  */
 export function calculateCompletion(qual) {
-    // If we have detailed module data (from background sync), use that for accuracy
+    const summaryPercentage = qual.percentDoneNumeric || 0;
+
+    // If we have detailed module data (from background sync), calculate accuracy
     if (qual.moduleDetails && qual.moduleDetails.length > 0) {
         let totalChecks = 0;
         let completedChecks = 0;
@@ -192,23 +227,18 @@ export function calculateCompletion(qual) {
             if (mod.alignmentMatrixCorrected) completedChecks++;
         });
 
-        if (totalChecks === 0) return 0;
-        return Math.round((completedChecks / totalChecks) * 100);
+        if (totalChecks === 0) return summaryPercentage;
+        
+        const moduleCompletion = Math.round((completedChecks / totalChecks) * 100);
+        
+        // Return the higher of the two (summary estimate vs detailed count)
+        // This ensures that manual updates in the summary sheet are reflected 
+        // even if the detailed module checkboxes aren't all ticked yet.
+        return Math.max(summaryPercentage, moduleCompletion);
     }
 
-    // Fallback to summary sheet data (less accurate)
-    const stages = [
-        qual.iacAligned,
-        qual.aacAligned,
-        qual.loadedOnMoodle,
-        qual.learnerGuideChecked,
-        qual.courseActivitiesCreated,
-        qual.contentReviewed,
-        qual.alignmentMatrixCorrected
-    ];
-
-    const completed = stages.filter(Boolean).length;
-    return Math.round((completed / stages.length) * 100);
+    // Fallback to summary sheet data
+    return summaryPercentage;
 }
 
 /**
