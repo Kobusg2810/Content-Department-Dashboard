@@ -1,8 +1,8 @@
 import { fetchQCTOData, calculateStats, exportToCSV, downloadCSV, fetchAllModuleDetails } from './data.js';
 import { renderStats, renderTable, filterQualifications } from './components.js';
 import { createCompletionChart, createStageChart, destroyChart } from './charts.js';
-import { fetchMoodleTickets, calculateMoodleStats, exportMoodleToCSV } from './moodle-data.js';
-import { renderMoodleStats, renderMoodleTable, filterMoodleTickets, parseCustomDate } from './moodle-components.js';
+import { fetchMoodleTickets, calculateMoodleStats, exportMoodleToCSV, parseCustomDate } from './moodle-data.js';
+import { renderMoodleStats, renderMoodleTable, filterMoodleTickets } from './moodle-components.js';
 import { createMoodleStatusChart, createMoodlePriorityChart } from './moodle-charts.js';
 import { renderCourseDashboard } from './course-components.js';
 import { renderLoadingDashboard } from './loading-components.js';
