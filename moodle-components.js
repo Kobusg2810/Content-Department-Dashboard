@@ -1,3 +1,5 @@
+import { parseCustomDate } from './moodle-data.js';
+
 // Filtering state for Moodle dashboard
 let currentMoodleFilter = null;
 let currentMoodleTickets = [];
@@ -100,10 +102,11 @@ export function renderMoodleStats(stats, container, tickets) {
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">${stats.avgResolutionDaysThisMonth !== undefined ? stats.avgResolutionDaysThisMonth : '-'}</div>
-            <div class="stat-label">Avg. Resolution Time (This Month)</div>
+            <div class="stat-value">${stats.avgResolutionDaysThisMonth > 0 ? stats.avgResolutionDaysThisMonth + ' days' : (stats.avgResolutionDaysThisMonth === 0 ? 'No data yet' : '-')}</div>
+            <div class="stat-label">Avg. Resolution Time (${new Date().toLocaleString('en-ZA', { month: 'long' })})</div>
         </div>
     `;
+
 
     // Event Delegation for click-to-filter
     container.addEventListener('click', (e) => {
@@ -317,36 +320,11 @@ function formatDate(dateStr) {
 }
 
 /**
- * Robust date parser for various formats (YYYY-MM-DD, DD/MM/YYYY, etc.)
- * @param {string} dateStr - Date string to parse
- * @returns {Date} parsed Date object
+ * Robust date parser - imported from moodle-data.js
+ * Re-exported here for backward compatibility with any external callers.
  */
-export function parseCustomDate(dateStr) {
-    if (!dateStr) return new Date('Invalid');
+// parseCustomDate is imported from moodle-data.js above
 
-    // 1. Prioritize DD/MM/YYYY or DD-MM-YYYY format (optionally with HH:mm time)
-    // This is crucial because new Date('02/10/2026') is ambiguous (Oct 2nd vs Feb 10th)
-    // We want to force DD/MM/YYYY interpretation for the user
-    const parts = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (parts) {
-        // parts[1] is day, parts[2] is month, parts[3] is year
-        const day = parseInt(parts[1], 10);
-        const month = parseInt(parts[2], 10) - 1; // Months are 0-indexed in JS
-        const year = parseInt(parts[3], 10);
-
-        // Return date if valid
-        const date = new Date(year, month, day);
-        if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
-            return date;
-        }
-    }
-
-    // 2. Try standard constructor for other formats (ISO YYYY-MM-DD, "DD Mon YYYY")
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) return date;
-
-    return new Date('Invalid');
-}
 
 /**
  * Add sort listeners to Moodle table headers

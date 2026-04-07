@@ -92,6 +92,50 @@ export const sampleMoodleTickets = [
 ];
 
 /**
+ * Robust date parser for various formats (DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, ISO strings)
+ * Always constructs dates in local time to avoid timezone offset issues.
+ * @param {string} dateStr - Date string to parse
+ * @returns {Date} parsed Date object (Invalid Date if parsing fails)
+ */
+export function parseCustomDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return new Date('Invalid');
+
+    let str = dateStr.trim();
+
+    // Strip time portion if present (e.g. "2026-04-05T10:00:00" or "2026-04-05 10:00")
+    if (str.includes('T')) str = str.split('T')[0];
+    else if (str.includes(' ')) str = str.split(' ')[0];
+
+    // 1. DD/MM/YYYY or DD-MM-YYYY  (day first — South African convention)
+    const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dmyMatch) {
+        const day   = parseInt(dmyMatch[1], 10);
+        const month = parseInt(dmyMatch[2], 10) - 1; // 0-indexed
+        const year  = parseInt(dmyMatch[3], 10);
+        const d = new Date(year, month, day);
+        if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+            return d;
+        }
+    }
+
+    // 2. YYYY-MM-DD (ISO date only — parse as local to avoid UTC midnight offset)
+    const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+        const year  = parseInt(isoMatch[1], 10);
+        const month = parseInt(isoMatch[2], 10) - 1;
+        const day   = parseInt(isoMatch[3], 10);
+        const d = new Date(year, month, day);
+        if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+            return d;
+        }
+    }
+
+    // 3. Fallback to browser parser (handles "07 Apr 2026", etc.)
+    const fallback = new Date(str);
+    return isNaN(fallback.getTime()) ? new Date('Invalid') : fallback;
+}
+
+/**
  * Fetch Moodle ticket data from Google Sheets
  * @param {string} sheetUrl - The Google Sheet URL
  * @param {string} gid - The sheet tab ID (gid parameter)
@@ -354,32 +398,8 @@ export function calculateMoodleStats(tickets) {
         let validTicketCountThisMonth = 0;
         let totalDaysThisMonth = 0;
         const totalDays = completedTickets.reduce((sum, ticket) => {
-            // Robust parsing for DD/MM/YYYY or YYYY-MM-DD
-            const parseDate = (dateStr) => {
-                if (!dateStr) return null;
-                
-                // Extract just the date part if it contains a timestamp (e.g., "toISOString()" format)
-                if (dateStr.includes('T')) {
-                    dateStr = dateStr.split('T')[0];
-                } else if (dateStr.includes(' ')) {
-                    dateStr = dateStr.split(' ')[0];
-                }
-
-                // Handle DD/MM/YYYY
-                if (dateStr.includes('/')) {
-                    const parts = dateStr.split('/');
-                    if (parts.length === 3) {
-                        // Assumption: DD/MM/YYYY
-                        const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-                        if (!isNaN(d.getTime())) return d;
-                    }
-                }
-                const d = new Date(dateStr);
-                return isNaN(d.getTime()) ? null : d;
-            };
-
-            const submitted = parseDate(ticket.date);
-            const completed = parseDate(ticket.dateCompleted);
+            const submitted = parseCustomDate(ticket.date);
+            const completed = parseCustomDate(ticket.dateCompleted);
 
             if (submitted && completed) {
                 // Ignore time components, compare just the dates
