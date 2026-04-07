@@ -446,7 +446,8 @@ export function calculateMoodleStats(tickets) {
         errorTypes,
         assignees,
         avgResolutionDays,
-        avgResolutionDaysThisMonth
+        avgResolutionDaysThisMonth,
+        ticketsResolvedThisMonth: validTicketCountThisMonth
     };
 }
 

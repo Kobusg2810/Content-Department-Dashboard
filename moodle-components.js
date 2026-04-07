@@ -102,7 +102,11 @@ export function renderMoodleStats(stats, container, tickets) {
                     </svg>
                 </div>
             </div>
-            <div class="stat-value">${stats.avgResolutionDaysThisMonth > 0 ? stats.avgResolutionDaysThisMonth + ' days' : (stats.avgResolutionDaysThisMonth === 0 ? 'No data yet' : '-')}</div>
+            <div class="stat-value">
+                ${stats.ticketsResolvedThisMonth && stats.ticketsResolvedThisMonth > 0 
+                  ? (stats.avgResolutionDaysThisMonth === 0 ? 'Same Day (0 Days)' : stats.avgResolutionDaysThisMonth + ' days') 
+                  : 'No data yet'}
+            </div>
             <div class="stat-label">Avg. Resolution Time (${new Date().toLocaleString('en-ZA', { month: 'long' })})</div>
         </div>
     `;
