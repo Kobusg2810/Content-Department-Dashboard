@@ -92,8 +92,9 @@ export const sampleMoodleTickets = [
 ];
 
 /**
- * Robust date parser for various formats (DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, ISO strings)
- * Always constructs dates in local time to avoid timezone offset issues.
+ * Robust date parser for various formats (DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, ISO strings,
+ * and natural formats like "07 Apr 2026").
+ * Always constructs numeric dates in local time to avoid timezone offset issues.
  * @param {string} dateStr - Date string to parse
  * @returns {Date} parsed Date object (Invalid Date if parsing fails)
  */
@@ -102,9 +103,15 @@ export function parseCustomDate(dateStr) {
 
     let str = dateStr.trim();
 
-    // Strip time portion if present (e.g. "2026-04-05T10:00:00" or "2026-04-05 10:00")
-    if (str.includes('T')) str = str.split('T')[0];
-    else if (str.includes(' ')) str = str.split(' ')[0];
+    // Strip time portion ONLY when preceded by a date-like value and followed by HH:MM
+    // e.g. "2026-04-05 10:00:00" → "2026-04-05"  but NOT "07 Apr 2026" → "07 Apr 2026"
+    if (str.includes('T')) {
+        str = str.split('T')[0].trim();
+    } else {
+        // Only strip if space is followed by a time component (HH:MM)
+        const timeMatch = str.match(/^(.+?)\s+\d{1,2}:\d{2}/);
+        if (timeMatch) str = timeMatch[1].trim();
+    }
 
     // 1. DD/MM/YYYY or DD-MM-YYYY  (day first — South African convention)
     const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
@@ -130,7 +137,7 @@ export function parseCustomDate(dateStr) {
         }
     }
 
-    // 3. Fallback to browser parser (handles "07 Apr 2026", etc.)
+    // 3. Fallback: let the browser parse natural formats like "07 Apr 2026", "April 7 2026", etc.
     const fallback = new Date(str);
     return isNaN(fallback.getTime()) ? new Date('Invalid') : fallback;
 }
